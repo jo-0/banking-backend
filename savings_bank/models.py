@@ -4,12 +4,16 @@ from django.contrib.auth import get_user_model
 
 class Account(models.Model):
     user = models.ForeignKey(get_user_model(), on_delete=models.PROTECT, null=True, blank=False)
+    created_at = models.DateTimeField(auto_now_add=True)
     balance = models.IntegerField()
     bank_name = models.CharField(max_length=24)
     branch = models.CharField(max_length=12)
 
     class Meta:
         verbose_name_plural = "accounts"
+
+    def __str__(self) -> str:
+        return f"{self.user}"
 
 
 class Transaction(models.Model):
@@ -22,7 +26,7 @@ class Transaction(models.Model):
         FAILED = "Failed", "Failed"
         PENDING = "Pending", "Pending"
 
-    date = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     from_account = models.ForeignKey(Account, on_delete=models.PROTECT, related_name="from_account")
     to_account = models.ForeignKey(Account, on_delete=models.PROTECT, related_name="to_account")
     amount = models.PositiveIntegerField()
