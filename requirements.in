@@ -10,3 +10,4 @@ psycopg2==2.9.5
 
 # Dev dependency
 pip-tools
+black==22.12.0
