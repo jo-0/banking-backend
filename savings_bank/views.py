@@ -13,9 +13,14 @@ class AccountView(View):
         return JsonResponse(model_to_dict(account), safe=False)
 
 
+class AccountBalanceView(View):
+    def get(self, request, account_id) -> JsonResponse:
+        account = get_object_or_404(Account, id=account_id)
+        return JsonResponse({"balance": account.balance})
+
+
 class TransactionView(View):
-    def get(self, request, account_id):
-        # account = get_object_or_404(Account, id=account_id)
+    def get(self, request, account_id) -> JsonResponse:
         transactions = Transaction.objects.filter(
             from_account=account_id, status=Transaction.TransactionStatus.SUCCESS
         ).values()
