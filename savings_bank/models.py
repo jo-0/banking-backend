@@ -39,9 +39,8 @@ class Transaction(models.Model):
 
     def save(self, *args, **kwargs) -> None:
         if not self.pk:
-            from_account = Account.objects.filter(id=self.from_account.id).first()
-            to_account = Account.objects.filter(id=self.to_account.id).first()
-
+            from_account = Account.objects.filter(id=self.from_account.id).first()  # type: ignore
+            to_account = Account.objects.filter(id=self.to_account.id).first()  # type: ignore
             if from_account is not None and to_account is not None:
                 # check if sending account has enough balance.
                 if from_account.balance < self.amount:
