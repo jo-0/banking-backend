@@ -1,4 +1,4 @@
-# Add the new package in this file and then run the below command. It will build requirements.txt
+# Add new packages in this file and then run the below command. It will build requirements.txt
 # pip-compile --output-file requirements.txt requirements.in
 # See outdated requirements in this file by running `python manage.py list_outdated`
 

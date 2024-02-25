@@ -3,7 +3,9 @@ from django.contrib.auth import get_user_model
 
 
 class Account(models.Model):
-    user = models.ForeignKey(get_user_model(), on_delete=models.PROTECT, null=True, blank=False)
+    user = models.ForeignKey(
+        get_user_model(), on_delete=models.PROTECT, null=True, blank=False
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     balance = models.IntegerField()
     bank_name = models.CharField(max_length=24)
@@ -27,11 +29,19 @@ class Transaction(models.Model):
         PENDING = "Pending", "Pending"
 
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="date")
-    from_account = models.ForeignKey(Account, on_delete=models.PROTECT, related_name="from_account")
-    to_account = models.ForeignKey(Account, on_delete=models.PROTECT, related_name="to_account")
+    from_account = models.ForeignKey(
+        Account, on_delete=models.PROTECT, related_name="from_account"
+    )
+    to_account = models.ForeignKey(
+        Account, on_delete=models.PROTECT, related_name="to_account"
+    )
     amount = models.PositiveIntegerField()
     note = models.CharField(max_length=48, null=True)
-    status = models.CharField(max_length=8, choices=TransactionStatus.choices, default=TransactionStatus.PENDING)
+    status = models.CharField(
+        max_length=8,
+        choices=TransactionStatus.choices,
+        default=TransactionStatus.PENDING,
+    )
     transaction_type = models.CharField(max_length=12, choices=TransactionType.choices)
 
     class Meta:

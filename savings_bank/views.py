@@ -31,6 +31,7 @@ class AccountBalanceView(View):
 class TransactionView(View):
     def get(self, request, account_id) -> JsonResponse:
         transactions = Transaction.objects.filter(
-            Q(from_account=account_id) | Q(to_account=account_id), status=Transaction.TransactionStatus.SUCCESS
+            Q(from_account=account_id) | Q(to_account=account_id),
+            status=Transaction.TransactionStatus.SUCCESS,
         ).values()
         return JsonResponse(list(transactions), safe=False)

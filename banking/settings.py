@@ -74,14 +74,14 @@ WSGI_APPLICATION = "banking.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'banking',
-        'USER': 'ajo',
-        'PASSWORD': 'root',
-        'HOST': 'localhost',
-        'PORT': '5432',
+DATABASES: dict[str, dict[str, str]] = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "banking",
+        "USER": "ajo",
+        "PASSWORD": "root",
+        "HOST": "localhost",
+        "PORT": "5432",
     }
 }
 
