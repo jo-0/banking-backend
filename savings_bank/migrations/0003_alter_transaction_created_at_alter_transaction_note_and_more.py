@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("savings_bank", "0002_rename_date_transaction_created_at_and_more"),
     ]
