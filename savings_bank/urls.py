@@ -16,58 +16,58 @@ from savings_bank.views import (
 
 urlpatterns = [
     path(
-        route="auth/login",
+        route="auth/login/",
         view=LoginView.as_view(),
         name="login_api",
     ),
     path(
-        route="auth/logout",
+        route="auth/logout/",
         view=LogoutView.as_view(),
         name="logout_api",
     ),
     path(
-        route="users",
+        route="users/",
         view=UserCreateView.as_view(),
         name="user_api",
     ),
     path(
-        route="accounts",
-        view=AccountCreateView.as_view(),
-        name="account_api",
-    ),
-    path(
-        route="accounts/all",
+        route="accounts/all/",
         view=AccountListView.as_view(),
         name="accounts_api",
     ),
     path(
-        route="accounts/<int:account_id>",
-        view=AccountDetailsView.as_view(),
-        name="account_api",
-    ),
-    path(
-        route="accounts/<int:account_id>/balance",
+        route="accounts/<int:account_id>/balance/",
         view=AccountBalanceView.as_view(),
         name="account_balance_api",
     ),
     path(
-        route="transactions/<int:account_id>",
-        view=TransactionView.as_view(),
-        name="transaction_api",
+        route="accounts/",
+        view=AccountCreateView.as_view(),
+        name="account_api",
     ),
     path(
-        route="transactions/deposit",
+        route="accounts/<int:account_id>/",
+        view=AccountDetailsView.as_view(),
+        name="account_api",
+    ),
+    path(
+        route="transactions/deposit/",
         view=DepositView.as_view(),
         name="deposit_api",
     ),
     path(
-        route="transactions/withdraw",
+        route="transactions/withdraw/",
         view=WithdrawalView.as_view(),
         name="withdrawal_api",
     ),
     path(
-        route="transactions/transfer",
+        route="transactions/transfer/",
         view=TransferView.as_view(),
         name="transfer_api",
+    ),
+    path(
+        route="transactions/<int:account_id>/",
+        view=TransactionView.as_view(),
+        name="transaction_api",
     ),
 ]

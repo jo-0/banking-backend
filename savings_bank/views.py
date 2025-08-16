@@ -23,7 +23,10 @@ def authenticate_token(request):
     if not auth_header or not auth_header.startswith("Token "):
         return None, JsonResponse(
             {
-                "error": "Authentication token required. Include 'Authorization: Token <your_token>' in headers."
+                "error": (
+                    "Authentication token required. Include 'Authorization: Token "
+                    "<your_token>' in headers."
+                )
             },
             status=401,
         )
@@ -207,8 +210,13 @@ class AccountCreateView(View):
 
 class AccountDetailsView(DeleteView):
     def get(self, request, account_id) -> JsonResponse:
+        # Authenticate user
+        user, error_response = authenticate_token(request)
+        if error_response:
+            return error_response
+
         account = get_object_or_404(Account, id=account_id)
-        user = User.objects.filter(id=account.user.pk).first()  # type: ignore
+        user = User.objects.filter(id=account.user.pk).first()
         if not user:
             raise
         account_dict = {}
@@ -221,18 +229,33 @@ class AccountDetailsView(DeleteView):
 
 class AccountListView(ListView):
     def get(self, request) -> JsonResponse:
+        # Authenticate user
+        user, error_response = authenticate_token(request)
+        if error_response:
+            return error_response
+
         accounts = Account.objects.all().values()
         return JsonResponse(list(accounts), safe=False)
 
 
 class AccountBalanceView(View):
     def get(self, request, account_id) -> JsonResponse:
+        # Authenticate user
+        user, error_response = authenticate_token(request)
+        if error_response:
+            return error_response
+
         account = get_object_or_404(Account, id=account_id)
         return JsonResponse({"balance": account.balance})
 
 
 class TransactionView(View):
     def get(self, request, account_id) -> JsonResponse:
+        # Authenticate user
+        user, error_response = authenticate_token(request)
+        if error_response:
+            return error_response
+
         transactions = Transaction.objects.filter(
             Q(from_account=account_id) | Q(to_account=account_id),
             status=Transaction.TransactionStatus.SUCCESS,
@@ -243,6 +266,11 @@ class TransactionView(View):
 @method_decorator(csrf_exempt, name="dispatch")
 class DepositView(View):
     def post(self, request) -> JsonResponse:
+        # Authenticate user
+        user, error_response = authenticate_token(request)
+        if error_response:
+            return error_response
+
         try:
             # Parse JSON data
             data = json.loads(request.body)
@@ -298,6 +326,11 @@ class DepositView(View):
 @method_decorator(csrf_exempt, name="dispatch")
 class WithdrawalView(View):
     def post(self, request) -> JsonResponse:
+        # Authenticate user
+        user, error_response = authenticate_token(request)
+        if error_response:
+            return error_response
+
         try:
             # Parse JSON data
             data = json.loads(request.body)
@@ -358,6 +391,11 @@ class WithdrawalView(View):
 @method_decorator(csrf_exempt, name="dispatch")
 class TransferView(View):
     def post(self, request) -> JsonResponse:
+        # Authenticate user
+        user, error_response = authenticate_token(request)
+        if error_response:
+            return error_response
+
         try:
             # Parse JSON data
             data = json.loads(request.body)
