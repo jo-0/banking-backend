@@ -1,10 +1,32 @@
 from django.urls import path
-from savings_bank.views import AccountView, AccountBalanceView, TransactionView
+from savings_bank.views import (
+    UserCreateView,
+    AccountCreateView,
+    AccountDetailsView,
+    AccountListView,
+    AccountBalanceView,
+    TransactionView,
+)
 
 urlpatterns = [
     path(
+        route="users",
+        view=UserCreateView.as_view(),
+        name="user_api",
+    ),
+    path(
+        route="accounts",
+        view=AccountCreateView.as_view(),
+        name="account_api",
+    ),
+    path(
+        route="accounts",
+        view=AccountListView.as_view(),
+        name="accounts_api",
+    ),
+    path(
         route="accounts/<int:account_id>",
-        view=AccountView.as_view(),
+        view=AccountDetailsView.as_view(),
         name="account_api",
     ),
     path(

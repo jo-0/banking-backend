@@ -1,84 +1,156 @@
-from django.db import models, transaction
+from decimal import Decimal
+
 from django.contrib.auth import get_user_model
+from django.db import models
 
 
 class Account(models.Model):
-    user = models.ForeignKey(
-        get_user_model(), on_delete=models.PROTECT, null=True, blank=False
+    user = models.OneToOneField(
+        get_user_model(), on_delete=models.PROTECT, related_name="account"
     )
     created_at = models.DateTimeField(auto_now_add=True)
-    balance = models.IntegerField()
-    bank_name = models.CharField(max_length=24)
-    branch = models.CharField(max_length=12)
+    bank_name = models.CharField(max_length=100)
+    branch = models.CharField(max_length=50)
 
     class Meta:
         verbose_name_plural = "accounts"
 
     def __str__(self) -> str:
-        return f"{self.user}"
+        return f"{self.user.username}'s Account - {self.bank_name}"
+
+    @property
+    def balance(self) -> Decimal:
+        """Calculate balance from all transactions"""
+        from django.db.models import Q, Sum
+
+        # Sum all credits (deposits and incoming transfers)
+        credits = self.transactions.filter(
+            Q(transaction_type="DEPOSIT")
+            | Q(transaction_type="TRANSFER", to_account=self)
+        ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
+
+        # Sum all debits (withdrawals and outgoing transfers)
+        debits = self.transactions.filter(
+            Q(transaction_type="WITHDRAWAL")
+            | Q(transaction_type="TRANSFER", from_account=self)
+        ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
+
+        return credits - debits
+
+    def has_sufficient_balance(self, amount: Decimal) -> bool:
+        """Check if account has sufficient balance for a transaction"""
+        return self.balance >= amount
+
+    def get_balance_at_date(self, date):
+        """Get balance at a specific date (bonus feature from README)"""
+        from django.db.models import Q, Sum
+
+        # Sum all credits up to the specified date
+        credits = self.transactions.filter(
+            Q(transaction_type="DEPOSIT")
+            | Q(transaction_type="TRANSFER", to_account=self),
+            created_at__lte=date,
+        ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
+
+        # Sum all debits up to the specified date
+        debits = self.transactions.filter(
+            Q(transaction_type="WITHDRAWAL")
+            | Q(transaction_type="TRANSFER", from_account=self),
+            created_at__lte=date,
+        ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
+
+        return credits - debits
 
 
 class Transaction(models.Model):
     class TransactionType(models.TextChoices):
-        DEBIT = "Debit", "Withdraw"
-        CREDIT = "Credit", "Deposit"
+        DEPOSIT = "DEPOSIT", "Deposit"
+        WITHDRAWAL = "WITHDRAWAL", "Withdrawal"
+        TRANSFER = "TRANSFER", "Transfer"
 
     class TransactionStatus(models.TextChoices):
-        SUCCESS = "Success", "Success"
-        FAILED = "Failed", "Failed"
-        PENDING = "Pending", "Pending"
+        SUCCESS = "SUCCESS", "Success"
+        FAILED = "FAILED", "Failed"
+        PENDING = "PENDING", "Pending"
 
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="date")
+    # Main account involved in the transaction
+    account = models.ForeignKey(
+        Account, on_delete=models.PROTECT, related_name="transactions"
+    )
+
+    # For transfers only - the other account involved
     from_account = models.ForeignKey(
-        Account, on_delete=models.PROTECT, related_name="from_account"
+        Account,
+        on_delete=models.PROTECT,
+        related_name="outgoing_transfers",
+        null=True,
+        blank=True,
     )
     to_account = models.ForeignKey(
-        Account, on_delete=models.PROTECT, related_name="to_account"
+        Account,
+        on_delete=models.PROTECT,
+        related_name="incoming_transfers",
+        null=True,
+        blank=True,
     )
-    amount = models.PositiveIntegerField()
-    note = models.CharField(max_length=48, null=True)
+
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    transaction_type = models.CharField(max_length=12, choices=TransactionType.choices)
     status = models.CharField(
         max_length=8,
         choices=TransactionStatus.choices,
         default=TransactionStatus.PENDING,
     )
-    transaction_type = models.CharField(max_length=12, choices=TransactionType.choices)
+    note = models.CharField(max_length=200, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name_plural = "transactions"
+        ordering = ["-created_at"]
 
-    def save(self, *args, **kwargs) -> None:
-        if not self.pk:
-            from_account = Account.objects.filter(id=self.from_account.id).first()  # type: ignore
-            to_account = Account.objects.filter(id=self.to_account.id).first()  # type: ignore
-            if from_account is not None and to_account is not None:
-                # check if sending account has enough balance.
-                if from_account.balance < self.amount:
-                    return
+    def __str__(self) -> str:
+        return f"{self.transaction_type} - {self.amount} - {self.account.user.username}"
 
-                # doing transactions on the same account
-                if from_account == to_account:
-                    with transaction.atomic():
-                        # if user withdraws
-                        if self.transaction_type == self.TransactionType.DEBIT:
-                            from_account.balance -= self.amount
-                            from_account.save()
-                        # if user deposits
-                        elif self.transaction_type == self.TransactionType.CREDIT:
-                            from_account.balance += self.amount
-                            from_account.save()
-                    self.status = self.TransactionStatus.SUCCESS
-                    return super().save(*args, **kwargs)
+    def _validate_sufficient_balance(self, account, transaction_type):
+        """Helper method to validate sufficient balance"""
+        from django.core.exceptions import ValidationError
 
-                with transaction.atomic():
-                    # Deduct amount from sending account
-                    from_account.balance -= self.amount
-                    from_account.save()
+        if account.balance < self.amount:
+            raise ValidationError(
+                f"Insufficient balance for {transaction_type.lower()}. "
+                f"Available: {account.balance}, Required: {self.amount}"
+            )
 
-                    # Add new balance to account
-                    to_account.balance += self.amount
-                    to_account.save()
+    def clean(self):
+        """Validate transaction data"""
+        from django.core.exceptions import ValidationError
 
-                    self.status = self.TransactionStatus.SUCCESS
+        if self.transaction_type == self.TransactionType.TRANSFER:
+            if not self.from_account or not self.to_account:
+                raise ValidationError(
+                    "Transfer requires both from_account and to_account"
+                )
+            if self.from_account == self.to_account:
+                raise ValidationError("Cannot transfer to the same account")
 
-        return super().save(*args, **kwargs)
+            # Check if from_account has sufficient balance
+            self._validate_sufficient_balance(self.from_account, "transfer")
+
+        elif self.transaction_type == self.TransactionType.WITHDRAWAL:
+            if self.from_account or self.to_account:
+                raise ValidationError(
+                    "Withdrawals should not have from_account or to_account"
+                )
+            # Check if account has sufficient balance for withdrawal
+            self._validate_sufficient_balance(self.account, "withdrawal")
+
+        elif self.transaction_type == self.TransactionType.DEPOSIT:
+            if self.from_account or self.to_account:
+                raise ValidationError(
+                    "Deposits should not have from_account or to_account"
+                )
+
+    def save(self, *args, **kwargs):
+        """Save transaction - business logic moved to service layer"""
+        self.clean()
+        super().save(*args, **kwargs)
