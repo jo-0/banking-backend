@@ -1,14 +1,30 @@
 from django.urls import path
+
 from savings_bank.views import (
-    UserCreateView,
+    AccountBalanceView,
     AccountCreateView,
     AccountDetailsView,
     AccountListView,
-    AccountBalanceView,
+    DepositView,
+    LoginView,
+    LogoutView,
     TransactionView,
+    TransferView,
+    UserCreateView,
+    WithdrawalView,
 )
 
 urlpatterns = [
+    path(
+        route="auth/login",
+        view=LoginView.as_view(),
+        name="login_api",
+    ),
+    path(
+        route="auth/logout",
+        view=LogoutView.as_view(),
+        name="logout_api",
+    ),
     path(
         route="users",
         view=UserCreateView.as_view(),
@@ -20,7 +36,7 @@ urlpatterns = [
         name="account_api",
     ),
     path(
-        route="accounts",
+        route="accounts/all",
         view=AccountListView.as_view(),
         name="accounts_api",
     ),
@@ -38,5 +54,20 @@ urlpatterns = [
         route="transactions/<int:account_id>",
         view=TransactionView.as_view(),
         name="transaction_api",
+    ),
+    path(
+        route="transactions/deposit",
+        view=DepositView.as_view(),
+        name="deposit_api",
+    ),
+    path(
+        route="transactions/withdraw",
+        view=WithdrawalView.as_view(),
+        name="withdrawal_api",
+    ),
+    path(
+        route="transactions/transfer",
+        view=TransferView.as_view(),
+        name="transfer_api",
     ),
 ]

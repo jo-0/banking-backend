@@ -1,3 +1,4 @@
+import secrets
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
@@ -154,3 +155,31 @@ class Transaction(models.Model):
         """Save transaction - business logic moved to service layer"""
         self.clean()
         super().save(*args, **kwargs)
+
+
+class AuthToken(models.Model):
+    """Custom authentication token model"""
+
+    user = models.ForeignKey(
+        get_user_model(), on_delete=models.CASCADE, related_name="auth_tokens"
+    )
+    key = models.CharField(max_length=40, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_used = models.DateTimeField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = "Authentication Token"
+        verbose_name_plural = "Authentication Tokens"
+
+    def save(self, *args, **kwargs):
+        if not self.key:
+            self.key = self.generate_key()
+        return super().save(*args, **kwargs)
+
+    @classmethod
+    def generate_key(cls):
+        return secrets.token_urlsafe(30)
+
+    def __str__(self):
+        return f"Token for {self.user.username}"
