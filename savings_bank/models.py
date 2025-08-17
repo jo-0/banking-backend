@@ -12,6 +12,8 @@ class Account(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     bank_name = models.CharField(max_length=100)
     branch = models.CharField(max_length=50)
+    # Explicitly type hinting the reverse relation to satisfy pylance
+    transactions: models.Manager
 
     class Meta:
         verbose_name_plural = "accounts"

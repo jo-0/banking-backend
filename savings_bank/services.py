@@ -101,7 +101,7 @@ class AccountService:
     """Service class for account operations"""
 
     @staticmethod
-    def get_transaction_history(account: Account, limit: int = None):
+    def get_transaction_history(account: Account, limit: int | None = None):
         """Get transaction history for an account"""
         transactions = account.transactions.all()
         if limit:
