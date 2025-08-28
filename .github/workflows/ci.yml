@@ -38,13 +38,21 @@ jobs:
     
     - name: Run migrations
       env:
-        DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_banking
+        DB_NAME: test_banking
+        DB_USER: postgres
+        DB_PASSWORD: postgres
+        DB_HOST: localhost
+        DB_PORT: 5432
       run: |
         python manage.py migrate
     
     - name: Run tests
       env:
-        DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_banking
+        DB_NAME: test_banking
+        DB_USER: postgres
+        DB_PASSWORD: postgres
+        DB_HOST: localhost
+        DB_PORT: 5432
       run: |
         python manage.py test
     
@@ -72,7 +80,7 @@ jobs:
         pip install safety bandit
     
     - name: Run safety check
-      run: safety check
+      run: safety scan
     
     - name: Run bandit security check
       run: bandit -r . -x .venv/,migrations/
