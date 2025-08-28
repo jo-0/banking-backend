@@ -254,7 +254,7 @@ class TransactionView(View):
             return error_response
 
         # Check if account exists
-        account = get_object_or_404(Account, id=account_id)
+        _ = get_object_or_404(Account, id=account_id)
 
         transactions = Transaction.objects.filter(
             Q(account=account_id)
@@ -376,7 +376,9 @@ class WithdrawalView(View):
             if account.user != user:
                 return JsonResponse(
                     {
-                        "error": "You do not have permission to withdraw from this account."
+                        "error": (
+                            "You do not have permission to withdraw from this account."
+                        )
                     },
                     status=403,
                 )
@@ -463,7 +465,9 @@ class TransferView(View):
             if from_account.user != user:
                 return JsonResponse(
                     {
-                        "error": "You do not have permission to transfer from this account."
+                        "error": (
+                            "You do not have permission to transfer from this account."
+                        )
                     },
                     status=403,
                 )

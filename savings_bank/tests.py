@@ -579,7 +579,8 @@ class TransferViewTests(SavingsBankAPITestCase):
         other_account.refresh_from_db()
 
         data = {
-            "from_account_id": other_account.id,  # Attempt to transfer from other user's account
+            # Attempt to transfer from other user's account
+            "from_account_id": other_account.id,
             "to_account_id": self.second_account.id,
             "amount": "10.00",
         }
