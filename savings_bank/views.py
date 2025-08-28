@@ -158,7 +158,6 @@ class AccountCreateView(View):
         user, error_response = authenticate_token(request)
         if error_response:
             return error_response
-        request.user = user
 
         try:
             # Check if the user already has an account
@@ -172,8 +171,6 @@ class AccountCreateView(View):
             data = json.loads(request.body)
             bank_name = data.get("bank_name", "Savings Bank")  # Default value
             branch = data.get("branch", "Main Branch")  # Default value
-            user_id = data.get("user")
-            user = get_object_or_404(User, id=user_id)
 
             # Create the new account, linking it to the authenticated user
             account = Account.objects.create(
@@ -256,8 +253,13 @@ class TransactionView(View):
         if error_response:
             return error_response
 
+        # Check if account exists
+        account = get_object_or_404(Account, id=account_id)
+
         transactions = Transaction.objects.filter(
-            Q(from_account=account_id) | Q(to_account=account_id),
+            Q(account=account_id)
+            | Q(from_account=account_id)
+            | Q(to_account=account_id),
             status=Transaction.TransactionStatus.SUCCESS,
         ).values()
         return JsonResponse(list(transactions), safe=False)
@@ -298,7 +300,17 @@ class DepositView(View):
                 return JsonResponse({"error": "Invalid amount format."}, status=400)
 
             # Get the account
-            account = get_object_or_404(Account, id=account_id)
+            try:
+                account = Account.objects.get(id=account_id)
+            except Account.DoesNotExist:
+                return JsonResponse({"error": "Account not found"}, status=404)
+
+            # Check if user owns the account
+            if account.user != user:
+                return JsonResponse(
+                    {"error": "You do not have permission to deposit to this account."},
+                    status=403,
+                )
 
             # Create deposit transaction using service
             transaction = TransactionService.create_deposit(account, amount, note)
@@ -359,6 +371,15 @@ class WithdrawalView(View):
 
             # Get the account
             account = get_object_or_404(Account, id=account_id)
+
+            # Check if user owns the account
+            if account.user != user:
+                return JsonResponse(
+                    {
+                        "error": "You do not have permission to withdraw from this account."
+                    },
+                    status=403,
+                )
 
             # Create withdrawal transaction using service (includes balance check)
             try:
@@ -437,6 +458,15 @@ class TransferView(View):
             # Get the accounts
             from_account = get_object_or_404(Account, id=from_account_id)
             to_account = get_object_or_404(Account, id=to_account_id)
+
+            # Check if user owns the from_account
+            if from_account.user != user:
+                return JsonResponse(
+                    {
+                        "error": "You do not have permission to transfer from this account."
+                    },
+                    status=403,
+                )
 
             # Create transfer using service (includes all validations)
             try:

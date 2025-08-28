@@ -1,7 +1,3 @@
-"""
-Business logic services for banking operations
-"""
-
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
