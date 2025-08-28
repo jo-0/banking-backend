@@ -347,27 +347,3 @@ curl -X POST http://localhost:8000/transactions/deposit \
 curl -X GET http://localhost:8000/accounts/1/balance \
   -H "Authorization: Token YOUR_TOKEN_HERE"
 ```
-
-## Admin Panel
-
-Access the Django admin at `/admin/` to:
-- ✅ View all accounts and transactions
-- ✅ Create deposits/withdrawals for users
-- ✅ Check user balances
-- ✅ View transaction history
-- ✅ Manage user accounts
-
-## Architecture Notes
-
-- **Balance Calculation:** Balances are computed in real-time from transaction history, ensuring data integrity
-- **Transaction Safety:** All operations use database transactions for atomicity
-- **Authentication:** Custom token-based system without external dependencies
-- **Audit Trail:** Complete transaction history with timestamps and notes
-- **Scalability:** Designed to handle high transaction volumes with proper indexing
-
-## Bonus Features Implemented
-
-- ✅ **Historical Balance Queries:** Check account balance at any point in time
-- ✅ **Performance Optimized:** Efficient balance calculations with database aggregations
-- ✅ **Token Management:** Secure authentication with token tracking and logout
-- ✅ **Admin Actions:** Custom admin interface for staff operations
